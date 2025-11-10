@@ -3,8 +3,8 @@ services:
     name: oralai-web
     rootDir: OCD
     plan: free
-    buildCommand: ./render-build.sh
-    startCommand: ./render-start.sh
+    runtime: docker
+    dockerfilePath: Dockerfile
     envVars:
       - key: APP_ENV
         value: production
