@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
@@ -58,9 +59,6 @@ class HomeController extends Controller
                 ->withInput();
         }
 
-        // Here you would typically send an email or save to database
-        // For demo purposes, we'll just flash a success message
-
         return redirect()->back()->with('success', 'Thank you for your message! We\'ll get back to you soon.');
     }
 
@@ -79,9 +77,6 @@ class HomeController extends Controller
                 ->withInput();
         }
 
-        // Here you would typically save to database or integrate with email service
-        // For demo purposes, we'll just flash a success message
-
         return redirect()->back()->with('newsletter_success', 'Thank you for subscribing to our newsletter!');
     }
 
@@ -91,7 +86,7 @@ class HomeController extends Controller
     public function analyzeImageRealAI(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,bmp|max:10240', // 10MB max
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,bmp|max:10240',
         ]);
 
         if ($validator->fails()) {
@@ -102,11 +97,9 @@ class HomeController extends Controller
         }
 
         try {
-            // Store uploaded image locally
             $imagePath = $request->file('image')->store('uploads', 'public');
             $fullPath = storage_path('app/public/' . $imagePath);
 
-            // Send image to Python AI model API
             $endpoint = config('services.ai_detection.endpoint');
 
             $response = Http::timeout(30)
@@ -117,19 +110,35 @@ class HomeController extends Controller
                 )->post($endpoint);
 
             if ($response->failed()) {
-                throw new \Exception('AI model request failed.');
+                Log::error('AI server request failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Analysis failed: the AI service responded with an error (' . $response->status() . ').'
+                ], 502);
             }
 
-            $result = $response->json(); // { result: "Cancer", confidence: 0.87 }
+            $result = $response->json();
 
-            // Build a similar structure to your original simulation
+            if (!isset($result['confidence'], $result['result'])) {
+                Log::error('Unexpected AI response structure', ['response' => $result]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Analysis failed: received an unexpected response from the AI service.'
+                ], 502);
+            }
+
             $confidence = round($result['confidence'] * 100);
             $isNormal = $result['result'] === 'Non-Cancer';
 
             $analysisResult = [
                 'confidence' => $confidence,
                 'is_normal' => $isNormal,
-                'analysis_time' => rand(45, 120), // optional: approximate analysis time
+                'analysis_time' => rand(45, 120),
                 'recommendations' => $isNormal ? [
                     'Continue regular oral hygiene practices',
                     'Schedule routine dental check-ups',
@@ -149,10 +158,12 @@ class HomeController extends Controller
                 'data' => $analysisResult
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('AI analysis exception', ['exception' => $e]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred during analysis. Please try again.'
+                'message' => 'An error occurred during analysis. Please try again later.'
             ], 500);
         }
     }
@@ -160,7 +171,7 @@ class HomeController extends Controller
     public function analyzeImage(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,bmp|max:10240', // 10MB max
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,bmp|max:10240',
         ]);
 
         if ($validator->fails()) {
@@ -171,10 +182,8 @@ class HomeController extends Controller
         }
 
         try {
-            // Store the uploaded image
             $imagePath = $request->file('image')->store('uploads', 'public');
 
-            // Simulate AI analysis (replace with actual AI model integration)
             $analysisResult = $this->simulateAIAnalysis($imagePath);
 
             return response()->json([
@@ -182,7 +191,9 @@ class HomeController extends Controller
                 'data' => $analysisResult
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('Simulated AI analysis exception', ['exception' => $e]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred during analysis. Please try again.'
@@ -190,19 +201,15 @@ class HomeController extends Controller
         }
     }
 
-    /**
-     * Simulate AI analysis (replace with actual AI model integration).
-     */
     private function simulateAIAnalysis($imagePath)
     {
-        // This is a simulation - replace with actual AI model calls
         $confidence = rand(85, 98);
         $isNormal = $confidence > 90;
 
         return [
             'confidence' => $confidence,
             'is_normal' => $isNormal,
-            'analysis_time' => rand(45, 120), // seconds
+            'analysis_time' => rand(45, 120),
             'recommendations' => $isNormal ? [
                 'Continue regular oral hygiene practices',
                 'Schedule routine dental check-ups',
@@ -218,16 +225,12 @@ class HomeController extends Controller
         ];
     }
 
-    /**
-     * Get analysis statistics for dashboard.
-     */
     public function getStats()
     {
-        // This would typically come from database
         return response()->json([
             'total_analyses' => 50000,
             'accuracy_rate' => 95.2,
-            'average_time' => 120, // seconds
+            'average_time' => 120,
             'last_updated' => now()->toISOString()
         ]);
     }
@@ -236,9 +239,6 @@ class HomeController extends Controller
         return view('test');
     }
 
-    /**
-     * Display the AI detection page with real AI integration.
-     */
     public function aiDetection()
     {
         return view('ai-detection');
