@@ -107,11 +107,13 @@ class HomeController extends Controller
             $fullPath = storage_path('app/public/' . $imagePath);
 
             // Send image to Python AI model API
+            $endpoint = config('services.ai_detection.endpoint');
+
             $response = Http::attach(
                 'file',
                 file_get_contents($fullPath),
                 $request->file('image')->getClientOriginalName()
-            )->post('http://127.0.0.1:5000/predict_keras_model'); // Python API endpoint
+            )->post($endpoint); // Python API endpoint
 
             if ($response->failed()) {
                 throw new \Exception('AI model request failed.');

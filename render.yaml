@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: oralai-web
+    rootDir: OCD
+    env: docker
+    plan: free
+    buildCommand: ./render-build.sh
+    startCommand: ./render-start.sh
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_NAME
+        value: OralAI
+      - key: APP_URL
+        value: https://oralai-web.onrender.com
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: DB_DATABASE
+        value: /opt/render/project/.render/data/database.sqlite
+      - key: AI_DETECTION_ENDPOINT
+        fromService:
+          type: web
+          name: oralai-ai
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: APP_KEY
+        generateValue: true
+    disk:
+      name: data
+      mountPath: /opt/render/project/.render/data
+      sizeGB: 1
+
+  - type: web
+    name: oralai-ai
+    rootDir: ocmds
+    env: python
+    plan: free
+    buildCommand: ./render-build.sh
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
