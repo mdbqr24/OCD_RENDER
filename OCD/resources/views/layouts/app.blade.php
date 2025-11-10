@@ -19,7 +19,18 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 
     <!-- Styles -->
-    @vite(['resources/css/app.css'])
+    @if(app()->environment('production'))
+        @php
+            $manifestPath = public_path('build/manifest.json');
+            $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
+            $cssPath = $manifest['resources/css/app.css']['file'] ?? null;
+        @endphp
+        @if($cssPath)
+            <link rel="stylesheet" href="{{ asset('build/' . $cssPath) }}">
+        @endif
+    @else
+        @vite(['resources/css/app.css'])
+    @endif
     @stack('styles')
 </head>
 <body>
@@ -187,7 +198,16 @@
     </footer>
 
     <!-- Scripts -->
-    @vite(['resources/js/app.js'])
+    @if(app()->environment('production'))
+        @php
+            $jsPath = $manifest['resources/js/app.js']['file'] ?? null;
+        @endphp
+        @if($jsPath)
+            <script type="module" src="{{ asset('build/' . $jsPath) }}"></script>
+        @endif
+    @else
+        @vite(['resources/js/app.js'])
+    @endif
 
     <!-- External Libraries -->
     <!-- Alpine Plugins -->

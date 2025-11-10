@@ -109,11 +109,12 @@ class HomeController extends Controller
             // Send image to Python AI model API
             $endpoint = config('services.ai_detection.endpoint');
 
-            $response = Http::attach(
-                'file',
-                file_get_contents($fullPath),
-                $request->file('image')->getClientOriginalName()
-            )->post($endpoint); // Python API endpoint
+            $response = Http::timeout(30)
+                ->attach(
+                    'file',
+                    file_get_contents($fullPath),
+                    $request->file('image')->getClientOriginalName()
+                )->post($endpoint);
 
             if ($response->failed()) {
                 throw new \Exception('AI model request failed.');
