@@ -3,8 +3,8 @@ services:
     name: oralai-web
     rootDir: OCD
     plan: free
-    runtime: docker
-    dockerfilePath: Dockerfile
+    buildCommand: ./render-build.sh
+    startCommand: ./render-start.sh
     envVars:
       - key: APP_ENV
         value: production
@@ -30,5 +30,6 @@ services:
     name: oralai-ai
     rootDir: ocmds
     plan: free
-    runtime: docker
-    dockerfilePath: Dockerfile
+    runtime: python
+    buildCommand: ./render-build.sh
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
