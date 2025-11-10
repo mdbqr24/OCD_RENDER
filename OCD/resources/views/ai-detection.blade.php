@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const startTime = Date.now();
 
-            const response = await fetch('{{ route("analyzeAI.image") }}', {
+            const response = await fetch('{{ route("analyzeAI.image", [], false) }}', {
                 method: 'POST',
                 body: formData,
                 headers: {
