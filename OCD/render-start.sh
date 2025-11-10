@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# Ensure the SQLite database file exists when using the attached disk
-mkdir -p /opt/render/project/.render/data
-if [ ! -f /opt/render/project/.render/data/database.sqlite ]; then
-  touch /opt/render/project/.render/data/database.sqlite
+# Ensure SQLite database exists in the writable temp directory
+if [ ! -f /tmp/database.sqlite ]; then
+  touch /tmp/database.sqlite
 fi
 
 php artisan migrate --force >/dev/null 2>&1 || true

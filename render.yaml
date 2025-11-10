@@ -2,7 +2,7 @@ services:
   - type: web
     name: oralai-web
     rootDir: OCD
-    env: docker
+    env: php
     plan: free
     buildCommand: ./render-build.sh
     startCommand: ./render-start.sh
@@ -18,7 +18,7 @@ services:
       - key: DB_CONNECTION
         value: sqlite
       - key: DB_DATABASE
-        value: /opt/render/project/.render/data/database.sqlite
+        value: /tmp/database.sqlite
       - key: AI_DETECTION_ENDPOINT
         fromService:
           type: web
@@ -26,10 +26,6 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: APP_KEY
         generateValue: true
-    disk:
-      name: data
-      mountPath: /opt/render/project/.render/data
-      sizeGB: 1
 
   - type: web
     name: oralai-ai
